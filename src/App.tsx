@@ -286,10 +286,6 @@ export default function App() {
                   <span>拆分经销商</span>
                   <strong>{activityDataResult?.dealerFiles.length ?? 0}</strong>
                 </article>
-                <article>
-                  <span>异常行</span>
-                  <strong>{activityDataResult?.invalidRows ?? 0}</strong>
-                </article>
               </div>
 
               <DataGrid
