@@ -472,23 +472,114 @@ h2 {
 }
 
 .upload-dialog {
-  padding: 26px 34px 28px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: min(86vh, 900px);
+  overflow: hidden;
 }
 
 .dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: grid;
   grid-template-columns: 1fr 40px;
   align-items: center;
-  margin-bottom: 26px;
+  padding: 24px 34px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
 }
 
 .dialog-header h2 {
+  margin: 0;
   text-align: center;
+}
+
+.dialog-header .dx-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #f2f3f5;
 }
 
 .dialog-body {
   display: grid;
   gap: 18px;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 34px;
+}
+
+.upload-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6f7f9;
+}
+
+.upload-mode-switch button {
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #424245;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+.upload-mode-switch button span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.upload-mode-switch button.active {
+  border-color: rgba(0, 113, 227, 0.32);
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.045);
+}
+
+.smart-upload-intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 113, 227, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 113, 227, 0.055);
+}
+
+.smart-upload-intro h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.smart-upload-intro p {
+  margin-top: 5px;
+  color: #424245;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.smart-upload-intro > span {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: var(--blue);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .dialog-field {
@@ -655,16 +746,132 @@ h2 {
 }
 
 .dialog-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-top: 30px;
+  margin-top: 0;
+  padding: 18px 34px 24px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.04);
 }
 
 .dialog-actions .dx-button {
   height: 54px;
   font-size: 16px;
   font-weight: 750;
+}
+
+.smart-match-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.smart-match-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+
+.smart-match-heading h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.smart-match-heading p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.smart-match-heading > span {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #2f855a;
+  background: rgba(47, 133, 90, 0.1);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.smart-match-grid {
+  min-height: 220px;
+}
+
+.smart-match-grid .dx-datagrid-headers {
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.smart-match-grid .dx-row > td {
+  height: 58px;
+  border-color: rgba(29, 29, 31, 0.075);
+  color: #2c2c2e;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.smart-match-grid .dx-texteditor {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+
+.match-target-cell {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.match-target-cell .dx-button {
+  white-space: nowrap;
+}
+
+.match-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.match-status-exact,
+.match-status-alias,
+.match-status-manual {
+  color: #2f855a;
+  background: rgba(47, 133, 90, 0.1);
+}
+
+.match-status-fuzzy {
+  color: #9a6700;
+  background: rgba(183, 121, 31, 0.12);
+}
+
+.match-status-multiple,
+.match-status-unmatched {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.1);
+}
+
+.match-status-manualAll {
+  color: #2f855a;
+  background: rgba(47, 133, 90, 0.1);
 }
 
 .activity-data-workspace {
@@ -689,6 +896,14 @@ h2 {
   color: var(--muted);
   font-size: 13px;
   font-weight: 650;
+}
+
+.activity-data-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .activity-data-summary {
@@ -721,6 +936,50 @@ h2 {
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.activity-data-grid {
+  overflow: hidden;
+  min-height: 610px;
+}
+
+.activity-data-grid .dx-datagrid-headers {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+.activity-data-grid .dx-datagrid-headers .dx-header-row > td {
+  height: 38px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.activity-data-grid .dx-datagrid-headers .dx-datagrid-filter-row > td {
+  height: 36px;
+  padding: 4px 8px;
+}
+
+.activity-data-grid .dx-datagrid-filter-row .dx-texteditor-input {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.activity-data-grid .dx-row > td {
+  height: 36px;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.activity-data-grid .dx-datagrid-content .dx-row > td {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dealer-task-board {
@@ -839,6 +1098,7 @@ h2 {
   .view-controls,
   .activity-form,
   .upload-layout,
+  .upload-mode-switch,
   .activity-data-hero,
   .activity-data-summary,
   .dealer-task-board,
@@ -854,7 +1114,15 @@ h2 {
     justify-content: stretch;
   }
 
+  .activity-data-actions {
+    justify-content: stretch;
+  }
+
   .toolbar-actions .dx-button {
+    flex: 1 1 140px;
+  }
+
+  .activity-data-actions .dx-button {
     flex: 1 1 140px;
   }
 }
