@@ -18,7 +18,32 @@ import { confirmAllDealerMatch, type DealerMatchRow, matchFilesToDealers } from 
 import { getDealerNames, getVisibleMaterials, inferFileType } from "./lib/materials";
 import type { ActivityMaterial, PendingFile, UserRole } from "./types";
 
-type DataTab = "storeList" | "materials" | "logistics" | "kol" | "activityData";
+type DataTab = "storeList" | "materials" | "logistics" | "kol" | "activityData" | "ledCollection";
+type LedCollectionStatus = "submitted" | "pending";
+
+interface LedStoreRow {
+  id: string;
+  dealerId: string;
+  dealerName: string;
+  posAppleId: string;
+  posName: string;
+  screenAddress: string;
+  ledSize: string;
+  format: string;
+  remarks: string;
+  logo: string;
+  submittedAt: string;
+}
+
+interface LedDraft {
+  posAppleId: string;
+  posName: string;
+  screenAddress: string;
+  ledSize: string;
+  format: string;
+  remarks: string;
+  logo: string;
+}
 
 const roleOptions = [
   { id: "appleLead", name: "Apple Lead" },
@@ -31,6 +56,7 @@ const dataTabs: Array<{ id: DataTab; label: string }> = [
   { id: "logistics", label: "物流及其他上传" },
   { id: "kol", label: "KOL/KOC探店" },
   { id: "activityData", label: "活动数据" },
+  { id: "ledCollection", label: "门店LED信息" },
 ];
 
 const smartAliases = {
@@ -41,6 +67,59 @@ const smartAliases = {
 
 const ALL_DEALERS_ID = "__all_participating_dealers__";
 const ALL_DEALERS_OPTION = { id: ALL_DEALERS_ID, name: "全部参与活动经销商" };
+const emptyLedDraft: LedDraft = {
+  posAppleId: "",
+  posName: "",
+  screenAddress: "",
+  ledSize: "",
+  format: "",
+  remarks: "",
+  logo: "",
+};
+
+const dealerNameById = (dealerId: string) => participatingDealers.find((dealer) => dealer.id === dealerId)?.name ?? "";
+
+const initialLedRows: LedStoreRow[] = [
+  {
+    id: "led-demo-shanghai-1",
+    dealerId: "dealer-shanghai",
+    dealerName: dealerNameById("dealer-shanghai"),
+    posAppleId: "R4845187-1",
+    posName: "上海仲璇环球港 Apple 授权店",
+    screenAddress: "商场外立面西侧 LED 大屏",
+    ledSize: "19209mm * 16720mm",
+    format: "横屏 / 双面转角屏",
+    remarks: "需适配转角屏，两侧画面比例不同",
+    logo: "shanghai-led-logo.png",
+    submittedAt: "2026-07-22 10:18:24",
+  },
+  {
+    id: "led-demo-shenzhen-1",
+    dealerId: "dealer-shenzhen",
+    dealerName: dealerNameById("dealer-shenzhen"),
+    posAppleId: "R4845187-2",
+    posName: "深圳酷果星创万象天地店",
+    screenAddress: "门店入口右侧柱面 LED",
+    ledSize: "20650mm * 15428mm",
+    format: "竖屏",
+    remarks: "建议提供安全区版本，底部 300mm 避免放关键信息",
+    logo: "shenzhen-kuguo-logo.png",
+    submittedAt: "2026-07-22 14:36:02",
+  },
+  {
+    id: "led-demo-tibet-1",
+    dealerId: "dealer-tibet",
+    dealerName: dealerNameById("dealer-tibet"),
+    posAppleId: "R4845187-3",
+    posName: "西藏酷爱拉萨中心店",
+    screenAddress: "商场中庭二层环形屏",
+    ledSize: "18492mm * 17500mm",
+    format: "横屏",
+    remarks: "现场亮度偏高，素材需提升对比度",
+    logo: "tibet-kuai-logo.png",
+    submittedAt: "2026-07-23 09:12:41",
+  },
+];
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 KB";
@@ -102,6 +181,15 @@ function exportRowsAsExcel(rows: ActivityDataRow[], fileName: string) {
   XLSX.writeFile(workbook, `${sanitizeExcelFileName(fileName)}.xlsx`);
 }
 
+function exportLedRowsAsExcel(rows: LedStoreRow[]) {
+  const header = ["Name of Reseller（客户）", "POS Apple ID", "Name of POS（门店）", "屏幕显示地址", "LED屏幕分辨率(宽*高)", "格式", "备注", "logo", "提交时间"];
+  const body = rows.map((row) => [row.dealerName, row.posAppleId, row.posName, row.screenAddress, row.ledSize, row.format, row.remarks, row.logo, row.submittedAt]);
+  const worksheet = XLSX.utils.aoa_to_sheet([header, ...body]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "LED Collection");
+  XLSX.writeFile(workbook, "门店LED信息汇总.xlsx");
+}
+
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const activityDataInputRef = useRef<HTMLInputElement | null>(null);
@@ -117,10 +205,24 @@ export default function App() {
   const [activityDataFileName, setActivityDataFileName] = useState("");
   const [activityDataUpdatedAt, setActivityDataUpdatedAt] = useState("");
   const [activityDataError, setActivityDataError] = useState("");
+  const [ledRows, setLedRows] = useState<LedStoreRow[]>(initialLedRows);
+  const [ledDraft, setLedDraft] = useState<LedDraft>(emptyLedDraft);
 
   const dealerSelectOptions = useMemo(() => [ALL_DEALERS_OPTION, ...participatingDealers], []);
   const visibleMaterials = useMemo(() => getVisibleMaterials(materials, role, currentDealerId), [materials, role, currentDealerId]);
   const currentDealer = participatingDealers.find((dealer) => dealer.id === currentDealerId);
+  const currentDealerLedRows = useMemo(() => ledRows.filter((row) => row.dealerId === currentDealerId), [currentDealerId, ledRows]);
+  const ledDealerStatuses = useMemo(() => participatingDealers.map((dealer) => {
+    const dealerRows = ledRows.filter((row) => row.dealerId === dealer.id);
+    return {
+      dealerId: dealer.id,
+      dealerName: dealer.name,
+      storeCount: dealer.storeCount,
+      submittedCount: dealerRows.length,
+      status: dealerRows.length > 0 ? "submitted" as LedCollectionStatus : "pending" as LedCollectionStatus,
+      latestSubmittedAt: dealerRows[dealerRows.length - 1]?.submittedAt ?? "-",
+    };
+  }), [ledRows]);
   const currentDealerActivityData = getDealerActivityData(activityDataResult, currentDealer?.name ?? "");
   const visibleActivityRows = useMemo(() => {
     if (!activityDataResult) return [];
@@ -235,6 +337,31 @@ export default function App() {
     closeUploadDialog();
   };
 
+  const updateLedDraft = (field: keyof LedDraft, value: string) => {
+    setLedDraft((draft) => ({ ...draft, [field]: value }));
+  };
+
+  const ledDraftReady = Boolean(ledDraft.posAppleId.trim() && ledDraft.posName.trim() && ledDraft.screenAddress.trim() && ledDraft.ledSize.trim() && ledDraft.format.trim());
+
+  const submitLedDraft = () => {
+    if (!currentDealer || !ledDraftReady) return;
+    const submittedAt = new Date().toLocaleString("zh-CN", { hour12: false });
+    setLedRows((rows) => [{
+      id: `led-${Date.now()}`,
+      dealerId: currentDealer.id,
+      dealerName: currentDealer.name,
+      posAppleId: ledDraft.posAppleId.trim(),
+      posName: ledDraft.posName.trim(),
+      screenAddress: ledDraft.screenAddress.trim(),
+      ledSize: ledDraft.ledSize.trim(),
+      format: ledDraft.format.trim(),
+      remarks: ledDraft.remarks.trim(),
+      logo: ledDraft.logo.trim(),
+      submittedAt,
+    }, ...rows]);
+    setLedDraft(emptyLedDraft);
+  };
+
   return (
     <main className="app-shell">
       <section className="page-heading">
@@ -316,7 +443,91 @@ export default function App() {
           </section>
         ) : null}
 
-        {activeDataTab !== "materials" && activeDataTab !== "activityData" ? <div className="empty-tab">该模块沿用原活动页面能力，本原型聚焦素材与活动数据分发。</div> : null}
+        {activeDataTab === "ledCollection" ? (
+          <section className="led-workspace">
+            <div className="activity-data-hero led-hero">
+              <div>
+                <h2>{role === "appleLead" ? "门店 LED 信息汇总" : "门店 LED 信息提交"}</h2>
+                <p>{role === "appleLead" ? "查看所有参与经销商的提交状态和门店 LED 明细，可导出汇总 Excel。" : "请按 LED 收集模板填写门店屏幕资料，提交后 Apple Lead 可在汇总页查看。"}</p>
+              </div>
+              <div className="activity-data-actions">
+                {role === "appleLead" ? <Button text="导出LED汇总" icon="download" type="default" disabled={ledRows.length === 0} onClick={() => exportLedRowsAsExcel(ledRows)} /> : null}
+              </div>
+            </div>
+
+            {role === "appleLead" ? (
+              <>
+                <div className="activity-data-summary">
+                  <article><span>参与经销商</span><strong>{participatingDealers.length}</strong></article>
+                  <article><span>已提交经销商</span><strong>{ledDealerStatuses.filter((dealer) => dealer.status === "submitted").length}</strong></article>
+                  <article><span>LED门店记录</span><strong>{ledRows.length}</strong></article>
+                </div>
+                <div className="led-grid-stack">
+                  <section className="led-card">
+                    <div className="led-card-heading"><h3>经销商提交状态</h3><span>{ledDealerStatuses.filter((dealer) => dealer.status === "pending").length} 家待提交</span></div>
+                    <DataGrid className="material-grid led-status-grid" dataSource={ledDealerStatuses} keyExpr="dealerId" showBorders={false} columnAutoWidth hoverStateEnabled noDataText="暂无经销商">
+                      <SearchPanel visible width={260} placeholder="搜索经销商" />
+                      <Paging defaultPageSize={10} />
+                      <Column dataField="dealerName" caption="经销商名称" minWidth={320} />
+                      <Column dataField="storeCount" caption="参与门店数" width={120} />
+                      <Column dataField="submittedCount" caption="已提交记录" width={120} />
+                      <Column dataField="latestSubmittedAt" caption="最近提交时间" width={190} />
+                      <Column caption="提交状态" width={120} cellRender={({ data }: { data: { status: LedCollectionStatus } }) => <span className={`led-status led-status-${data.status}`}>{data.status === "submitted" ? "已提交" : "未提交"}</span>} />
+                    </DataGrid>
+                  </section>
+                  <section className="led-card">
+                    <div className="led-card-heading"><h3>LED 信息汇总</h3><span>{ledRows.length} 条记录</span></div>
+                    <DataGrid className="material-grid led-detail-grid" dataSource={ledRows} keyExpr="id" showBorders={false} columnAutoWidth hoverStateEnabled height={460} scrolling={{ mode: "standard", showScrollbar: "always" }} noDataText="经销商提交后，这里会显示汇总明细">
+                      <SearchPanel visible width={280} placeholder="搜索LED信息" />
+                      <FilterRow visible applyFilter="auto" />
+                      <HeaderFilter visible />
+                      <Column dataField="dealerName" caption="Name of Reseller（客户）" minWidth={280} />
+                      <Column dataField="posAppleId" caption="POS Apple ID" minWidth={150} />
+                      <Column dataField="posName" caption="Name of POS（门店）" minWidth={220} />
+                      <Column dataField="screenAddress" caption="屏幕显示地址" minWidth={260} />
+                      <Column dataField="ledSize" caption="LED屏幕分辨率(宽*高)" minWidth={190} />
+                      <Column dataField="format" caption="格式" minWidth={140} />
+                      <Column dataField="remarks" caption="备注" minWidth={180} />
+                      <Column dataField="logo" caption="logo" minWidth={140} />
+                    </DataGrid>
+                  </section>
+                </div>
+              </>
+            ) : (
+              <div className="led-dealer-layout">
+                <section className="led-card led-form-card">
+                  <div className="led-card-heading"><h3>填写 LED 收集表</h3><span>{currentDealer?.name}</span></div>
+                  <div className="led-form-grid">
+                    <label><span>POS Apple ID *</span><TextBox value={ledDraft.posAppleId} placeholder="如 R4845187" onValueChanged={(event) => updateLedDraft("posAppleId", event.value)} /></label>
+                    <label><span>Name of POS（门店） *</span><TextBox value={ledDraft.posName} placeholder="请输入门店名称" onValueChanged={(event) => updateLedDraft("posName", event.value)} /></label>
+                    <label className="field-wide"><span>屏幕显示地址 *</span><TextBox value={ledDraft.screenAddress} placeholder="请输入 LED 展示位置/屏幕地址" onValueChanged={(event) => updateLedDraft("screenAddress", event.value)} /></label>
+                    <label><span>LED屏幕分辨率(宽*高) *</span><TextBox value={ledDraft.ledSize} placeholder="如 1920mm * 1080mm" onValueChanged={(event) => updateLedDraft("ledSize", event.value)} /></label>
+                    <label><span>格式 *</span><TextBox value={ledDraft.format} placeholder="如 横屏 / 竖屏 / 异形屏" onValueChanged={(event) => updateLedDraft("format", event.value)} /></label>
+                    <label className="field-wide"><span>备注</span><TextBox value={ledDraft.remarks} placeholder="补充说明，如播放限制、亮屏时间等" onValueChanged={(event) => updateLedDraft("remarks", event.value)} /></label>
+                    <label className="field-wide"><span>logo</span><TextBox value={ledDraft.logo} placeholder="填写 logo 文件名或链接" onValueChanged={(event) => updateLedDraft("logo", event.value)} /></label>
+                  </div>
+                  <div className="led-submit-row"><Button text="提交LED信息" type="default" disabled={!ledDraftReady} onClick={submitLedDraft} /></div>
+                </section>
+                <section className="led-card">
+                  <div className="led-card-heading"><h3>我的提交记录</h3><span>{currentDealerLedRows.length} 条</span></div>
+                  <DataGrid className="material-grid led-detail-grid" dataSource={currentDealerLedRows} keyExpr="id" showBorders={false} columnAutoWidth hoverStateEnabled height={420} scrolling={{ mode: "standard", showScrollbar: "always" }} noDataText="提交后，这里会显示本经销商 LED 信息">
+                    <SearchPanel visible width={240} placeholder="搜索我的LED信息" />
+                    <Column dataField="posAppleId" caption="POS Apple ID" minWidth={150} />
+                    <Column dataField="posName" caption="Name of POS（门店）" minWidth={220} />
+                    <Column dataField="screenAddress" caption="屏幕显示地址" minWidth={260} />
+                    <Column dataField="ledSize" caption="LED屏幕分辨率(宽*高)" minWidth={190} />
+                    <Column dataField="format" caption="格式" minWidth={140} />
+                    <Column dataField="remarks" caption="备注" minWidth={180} />
+                    <Column dataField="logo" caption="logo" minWidth={140} />
+                    <Column dataField="submittedAt" caption="提交时间" minWidth={180} />
+                  </DataGrid>
+                </section>
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {activeDataTab !== "materials" && activeDataTab !== "activityData" && activeDataTab !== "ledCollection" ? <div className="empty-tab">该模块沿用原活动页面能力，本原型聚焦素材、活动数据与 LED 信息收集。</div> : null}
       </section>
 
       <Popup visible={isUploadOpen} onHiding={closeUploadDialog} showTitle={false} width={1120} height="auto" dragEnabled={false} hideOnOutsideClick={false}>
