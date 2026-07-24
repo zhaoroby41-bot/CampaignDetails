@@ -938,6 +938,31 @@ h2 {
   white-space: nowrap;
 }
 
+.summary-metric-link {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  color: var(--blue);
+  background: transparent;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: left;
+  text-overflow: ellipsis;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.summary-metric-link:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}
+
 .activity-data-grid {
   overflow: hidden;
   min-height: 610px;
@@ -985,13 +1010,6 @@ h2 {
 .led-workspace {
   display: grid;
   gap: 18px;
-}
-
-.led-hero {
-  border-color: rgba(0, 113, 227, 0.16);
-  background:
-    linear-gradient(135deg, rgba(0, 113, 227, 0.07), rgba(255, 255, 255, 0.94) 42%),
-    #fff;
 }
 
 .led-grid-stack,
@@ -1050,6 +1068,64 @@ h2 {
 .led-status-pending {
   color: #b42318;
   background: rgba(180, 35, 24, 0.1);
+}
+
+.metric-cell {
+  color: var(--blue) !important;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.metric-cell-disabled {
+  color: var(--muted) !important;
+  cursor: default;
+}
+
+.metric-link {
+  border: 0;
+  color: var(--blue);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.metric-link:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}
+
+.led-detail-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(78vh, 760px);
+  overflow: hidden;
+}
+
+.led-detail-summary {
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 113, 227, 0.16);
+  border-radius: 8px;
+  color: #424245;
+  background: rgba(0, 113, 227, 0.055);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.logo-link {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.logo-link:hover {
+  text-decoration: underline;
 }
 
 .led-form-grid {
